@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
-import { Book, Borrow, User } from "../model";
+import express, { Request, Response, NextFunction } from 'express';
+import { Book, Borrow, User } from '../model';
 
 var router = express.Router();
 
-router.get("/", async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const { current, pageSize, book, user, status } = req.query;
   const total = await Borrow.countDocuments({
     ...(book && { book }),
@@ -13,7 +13,7 @@ router.get("/", async (req: Request, res: Response) => {
   // 如果用户是普通用户，则只返回自己的借阅，若是管理员返回所有的
   const session = req.session as any;
   let newUser = user;
-  if (session.user && session.user.role === "user") {
+  if (session.user && session.user.role === 'user') {
     newUser = session.user._id;
   }
   const data = await Borrow.find({
@@ -23,12 +23,12 @@ router.get("/", async (req: Request, res: Response) => {
   })
     .sort({ updatedAt: -1 })
     .skip((Number(current) - 1) * Number(pageSize))
-    .populate(["user", "book"]);
+    .populate(['user', 'book']);
 
   res.status(200).json({ message: true, data, total });
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const { book, user } = req.body;
   const borrow = new Borrow(req.body);
 
@@ -42,49 +42,44 @@ router.post("/", async (req: Request, res: Response) => {
       await Book.findByIdAndUpdate(bookData._id, { stock: bookData.stock - 1 });
       res.status(200).json({ success: true });
     } else {
-      res.status(500).json({ message: "书籍库存不足" });
+      res.status(500).json({ message: '书籍库存不足' });
     }
   } else {
-    res.status(500).json({ message: "书籍不存在" });
+    res.status(500).json({ message: '书籍不存在' });
   }
 
   const obj = await borrow.save();
   res.status(200).json({ message: true });
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const data = await Borrow.findOne({ _id: req.params.id });
   if (data) {
     res.status(200).json({ success: true, data });
   } else {
-    res.status(500).json({ message: "该借阅不存在" });
+    res.status(500).json({ message: '该借阅不存在' });
   }
 });
-router.put("/:id", async (req: Request, res: Response) => {});
+router.put('/:id', async (req: Request, res: Response) => {});
 
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   const borrow = await Borrow.findById(req.params.id);
   if (borrow) {
     await Borrow.deleteOne({ _id: req.params.id });
     res.status(200).json({ success: true });
   } else {
-    res.status(500).json({ message: "该借阅不存在" });
+    res.status(500).json({ message: '该借阅不存在' });
   }
 });
 
 // 书籍归还
-router.put("/back/:id", async (req: Request, res: Response) => {
+router.put('/back/:id', async (req: Request, res: Response) => {
   const borrow = await Borrow.findOne({ _id: req.params.id });
-  console.log(
-    "%c [ borrow ]-78",
-    "font-size:13px; background:pink; color:#bf2c9f;",
-    borrow
-  );
   if (borrow) {
-    if (borrow.status === "off") {
-      res.status(500).json({ message: "当前书籍已被还" });
+    if (borrow.status === 'off') {
+      res.status(500).json({ message: '当前书籍已被还' });
     } else {
-      borrow.status = "off";
+      borrow.status = 'off';
       borrow.backAt = Date.now();
       await borrow.save();
       // 书籍归还后需要更新书的库存
@@ -94,14 +89,14 @@ router.put("/back/:id", async (req: Request, res: Response) => {
         book.stock += 1;
         await book.save();
       } else {
-        res.status(500).json({ message: "书籍不存在" });
+        res.status(500).json({ message: '书籍不存在' });
       }
 
       // 书籍归还后，把库存增加一个
       res.status(200).json({ success: true });
     }
   } else {
-    res.status(500).json({ message: "该借阅不存在" });
+    res.status(500).json({ message: '该借阅不存在' });
   }
 });
 

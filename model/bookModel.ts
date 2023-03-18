@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const bookSchema = new mongoose.Schema({
   name: {
@@ -12,9 +12,12 @@ const bookSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  cover: {
+    type: String,
+  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Category",
+    ref: 'Category',
   },
   stock: {
     type: Number,
