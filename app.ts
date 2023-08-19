@@ -1,65 +1,43 @@
-import express, { Request, Response, NextFunction } from "express";
-import session from "express-session";
-import path from "path";
-import cookieParser from "cookie-parser";
-import logger from "morgan";
-import "express-async-errors";
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
 
-import loginRouter from "./routes/login";
-import logoutRouter from "./routes/logout";
-import usersRouter from "./routes/users";
-import booksRouter from "./routes/books";
-import categoryRouter from "./routes/category";
-import borrowRouter from "./routes/borrows";
+// var indexRouter = require('./routes/index');
+// var usersRouter = require('./routes/users');
+const req = require('express/lib/request');
+require('./model/index');
 
 var app = express();
 
 // view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "jade");
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
-app.use(logger("dev"));
-
+app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  session({
-    secret: "abc123",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 60 * 60 * 24 * 1000 }, // 一天过期
-  })
-);
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if (!req.url.includes("/login") && !req.url.includes("/logout")) {
-    if (!(req.session as any).user) {
-      return res.status(401).json({ message: "请登陆" });
-    }
-  }
-  next();
-});
-
-app.use("/api/login", loginRouter);
-app.use("/api/logout", logoutRouter);
-app.use("/api/users", usersRouter);
-app.use("/api/books", booksRouter);
-app.use("/api/categories", categoryRouter);
-app.use("/api/borrows", borrowRouter);
+// app.use('/', indexRouter);
+// app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
-// app.use(function (req: Request, res: Response, next) {
-//   next(createError(404));
-// });
-
-app.use(function (err: Error, req: Request, res: Response, next: NextFunction) {
-  res.status(500).json({ message: err.message });
+app.use(function (req, res, next) {
+  next(createError(404));
 });
 
-app.listen(3001, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${3001}`);
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
 });
 
 module.exports = app;
